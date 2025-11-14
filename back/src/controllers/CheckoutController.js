@@ -46,12 +46,18 @@ async function resolveItems(rawItems) {
 
 async function quote(req, res) {
   try {
-    const required = ensureFields(req.body, ['items', 'destination']);
-    if (required.length) {
-      return res.status(400).json({ error: 'Dados incompletos.' });
+    let payload = req.body || {};
+    if (!payload.items || !payload.destination) {
+      const sku = String((req.query && (req.query.sku || req.query.id || req.query.productId)) || 'STACK-DUPLO');
+      const qty = Number((req.query && req.query.qty) || 1);
+      const cep = String((req.query && (req.query.cep || req.query.postal_code)) || '').replace(/\D/g, '').slice(0, 8);
+      if (!cep) {
+        return res.status(400).json({ error: 'Dados incompletos.' });
+      }
+      payload = { items: [{ sku, qty }], destination: { cep } };
     }
-    const items = await resolveItems(req.body.items);
-    const destinationCep = (req.body.destination.cep || req.body.destination.postal_code || '').replace(/\D/g, '');
+    const items = await resolveItems(payload.items);
+    const destinationCep = (payload.destination.cep || payload.destination.postal_code || '').replace(/\D/g, '');
     const quoteResult = await shippingService.quote({
       destinationCep,
       items: items.map((item) => ({
