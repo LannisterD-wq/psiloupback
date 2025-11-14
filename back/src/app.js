@@ -41,7 +41,7 @@ app.get('/health', (req, res) => {
 app.use('/api', routes);
 
 const STATIC_DIR = path.join(__dirname, '../public_html');
-if (fs.existsSync(STATIC_DIR)) {
+if (fs.existsSync(STATIC_DIR) && config.env !== 'production') {
   app.use(express.static(STATIC_DIR));
   app.get('*', (req, res) => {
     if (req.path.startsWith('/api')) {
